@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}AI 이미지 분류기 - 홈{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Hero Section -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-4">
+                <i class="fas fa-robot me-3"></i>AI 이미지 분류기
+            </h1>
+            <p class="lead mb-4">
+                업로드한 이미지가 실제 사진인지 AI가 생성한 이미지인지 정확하게 판별해드립니다.
+                <br>고급 Vision Transformer 모델을 사용하여 높은 정확도로 분석합니다.
+            </p>
+        </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <!-- Upload Area -->
+                    <div id="upload-area" class="upload-zone text-center p-5 border-2 border-dashed rounded-3 mb-4">
+                        <div id="upload-content">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">이미지를 드래그하거나 클릭하여 업로드하세요</h4>
+                            <p class="text-muted mb-3">
+                                PNG, JPG, JPEG, GIF, BMP, TIFF 파일 지원 (최대 16MB)
+                            </p>
+                            <button type="button" class="btn btn-primary btn-lg" id="file-select-btn">
+                                <i class="fas fa-folder-open me-2"></i>파일 선택
+                            </button>
+                        </div>
+
+                        <!-- File Preview -->
+                        <div id="file-preview" class="d-none">
+                            <img id="preview-image" class="img-fluid rounded mb-3" style="max-height: 300px;">
+                            <div class="d-flex justify-content-center gap-2">
+                                <button id="analyze-btn" class="btn btn-success btn-lg">
+                                    <i class="fas fa-search me-2"></i>분석하기
+                                </button>
+                                <button id="cancel-btn" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>취소
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden File Input -->
+                    <input type="file" id="file-input" class="d-none" accept="image/*">
+
+                    <!-- Loading Spinner -->
+                    <div id="loading" class="text-center d-none">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">분석 중...</span>
+                        </div>
+                        <h5 class="text-primary">AI가 이미지를 분석하고 있습니다...</h5>
+                        <p class="text-muted">잠시만 기다려주세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="row justify-content-center mt-5 d-none">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>분석 결과
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Image Display -->
+                        <div class="col-md-4">
+                            <img id="result-image" class="img-fluid rounded shadow" alt="분석된 이미지">
+                        </div>
+
+                        <!-- Results -->
+                        <div class="col-md-8">
+                            <div class="mb-4">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-brain me-2"></i>AI 분석 결과
+                                </h5>
+
+                                <!-- Prediction -->
+                                <div class="alert alert-info" role="alert">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-check-circle me-2"></i>판정 결과
+                                    </h6>
+                                    <p class="mb-0">
+                                        <strong id="prediction-text"></strong>
+                                        <span class="badge bg-primary ms-2" id="confidence-badge"></span>
+                                    </p>
+                                </div>
+
+                                <!-- Explanation -->
+                                <div class="mb-4">
+                                    <h6 class="text-secondary">
+                                        <i class="fas fa-lightbulb me-2"></i>분석 설명
+                                    </h6>
+                                    <p id="explanation-text" class="text-muted"></p>
+                                </div>
+
+                                <!-- Features -->
+                                <div class="mb-4">
+                                    <h6 class="text-secondary">
+                                        <i class="fas fa-cogs me-2"></i>이미지 특징
+                                    </h6>
+                                    <div id="features-list" class="row text-sm">
+                                        <!-- Features will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Feedback Section -->
+                            <div class="border-top pt-4">
+                                <h6 class="text-secondary mb-3">
+                                    <i class="fas fa-thumbs-up me-2"></i>결과가 정확한가요?
+                                </h6>
+                                <div class="d-flex gap-2 mb-3">
+                                    <button class="btn btn-success btn-sm" onclick="submitFeedback('correct')">
+                                        <i class="fas fa-check me-1"></i>정확함
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="submitFeedback('incorrect')">
+                                        <i class="fas fa-times me-1"></i>부정확함
+                                    </button>
+                                </div>
+
+                                <!-- Incorrect Feedback Form -->
+                                <div id="incorrect-feedback" class="d-none">
+                                    <div class="mb-3">
+                                        <label class="form-label">실제 정답은 무엇인가요?</label>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-primary btn-sm"
+                                                onclick="setCorrectLabel('REAL')">
+                                                <i class="fas fa-camera me-1"></i>실제 사진
+                                            </button>
+                                            <button class="btn btn-outline-warning btn-sm"
+                                                onclick="setCorrectLabel('FAKE')">
+                                                <i class="fas fa-robot me-1"></i>AI 생성 이미지
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" onclick="sendFeedback()">
+                                        <i class="fas fa-paper-plane me-1"></i>피드백 전송
+                                    </button>
+                                </div>
+
+                                <div id="feedback-success" class="alert alert-success d-none" role="alert">
+                                    <i class="fas fa-check-circle me-2"></i>피드백이 저장되었습니다. 감사합니다!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mt-5">
+        <div class="col-lg-12">
+            <h3 class="text-center mb-4">주요 기능</h3>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">고급 AI 분석</h5>
+                            <p class="card-text text-muted">
+                                Vision Transformer 모델을 사용하여 높은 정확도로 이미지를 분석합니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-pie fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">상세한 분석</h5>
+                            <p class="card-text text-muted">
+                                신뢰도 퍼센트와 함께 왜 그런 판정이 나왔는지 설명해드립니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">지속적 학습</h5>
+                            <p class="card-text text-muted">
+                                사용자 피드백을 통해 모델이 지속적으로 개선됩니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global variables
+    let currentFile = null;
+    let currentResult = null;
+    let correctLabel = null;
+
+    // File upload handling
+    document.getElementById('file-input').addEventListener('change', handleFileSelect);
+    document.getElementById('upload-area').addEventListener('dragover', handleDragOver);
+    document.getElementById('upload-area').addEventListener('drop', handleDrop);
+    document.getElementById('upload-area').addEventListener('click', () => document.getElementById('file-input').click());
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    }
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    }
+
+    function handleFile(file) {
+        // Validate file type
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/tiff'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('지원되지 않는 파일 형식입니다. PNG, JPG, JPEG, GIF, BMP, TIFF 파일만 업로드 가능합니다.');
+            return;
+        }
+
+        // Validate file size (16MB)
+        if (file.size > 16 * 1024 * 1024) {
+            alert('파일 크기가 너무 큽니다. 16MB 이하의 파일만 업로드 가능합니다.');
+            return;
+        }
+
+        currentFile = file;
+
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('upload-content').classList.add('d-none');
+            document.getElementById('file-preview').classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Cancel upload
+    document.getElementById('cancel-btn').addEventListener('click', function () {
+        currentFile = null;
+        document.getElementById('file-input').value = '';
+        document.getElementById('upload-content').classList.remove('d-none');
+        document.getElementById('file-preview').classList.add('d-none');
+        document.getElementById('results-section').classList.add('d-none');
+    });
+
+    // Analyze button
+    document.getElementById('analyze-btn').addEventListener('click', analyzeImage);
+
+    function analyzeImage() {
+        if (!currentFile) return;
+
+        // Show loading
+        document.getElementById('file-preview').classList.add('d-none');
+        document.getElementById('loading').classList.remove('d-none');
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('file', currentFile);
+
+        // Send request
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').classList.add('d-none');
+
+                if (data.success) {
+                    currentResult = data.result;
+                    displayResults(data.result);
+                } else {
+                    alert('분석 중 오류가 발생했습니다: ' + data.error);
+                    document.getElementById('file-preview').classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').classList.add('d-none');
+                alert('분석 중 오류가 발생했습니다: ' + error.message);
+                document.getElementById('file-preview').classList.remove('d-none');
+            });
+    }
+
+    function displayResults(result) {
+        // Set image
+        document.getElementById('result-image').src = '/static/uploads/' + result.filename;
+
+        // Set prediction
+        const predictionText = result.prediction === 'REAL' ? '실제 사진' : 'AI 생성 이미지';
+        const confidencePercent = (result.confidence * 100).toFixed(1);
+
+        document.getElementById('prediction-text').textContent = predictionText;
+        document.getElementById('confidence-badge').textContent = confidencePercent + '%';
+
+        // Set explanation
+        document.getElementById('explanation-text').textContent = result.explanation;
+
+        // Set features
+        if (result.features) {
+            const featuresList = document.getElementById('features-list');
+            featuresList.innerHTML = `
+            <div class="col-6">
+                <small class="text-muted">크기: ${result.features.size}</small>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">종횡비: ${result.features.aspect_ratio}</small>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">밝기: ${result.features.brightness}</small>
+            </div>
+            <div class="col-6">
+                <small class="text-muted">대비: ${result.features.contrast}</small>
+            </div>
+        `;
+        }
+
+        // Show results
+        document.getElementById('results-section').classList.remove('d-none');
+
+        // Reset feedback
+        document.getElementById('incorrect-feedback').classList.add('d-none');
+        document.getElementById('feedback-success').classList.add('d-none');
+        correctLabel = null;
+    }
+
+    function submitFeedback(type) {
+        if (type === 'correct') {
+            // Send correct feedback
+            sendFeedbackData('correct', currentResult.prediction);
+        } else {
+            // Show incorrect feedback form
+            document.getElementById('incorrect-feedback').classList.remove('d-none');
+        }
+    }
+
+    function setCorrectLabel(label) {
+        correctLabel = label;
+        // Update button styles
+        document.querySelectorAll('#incorrect-feedback button').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary', 'btn-outline-warning');
+        });
+
+        const selectedBtn = event.target;
+        selectedBtn.classList.remove('btn-outline-primary', 'btn-outline-warning');
+        selectedBtn.classList.add('btn-primary');
+    }
+
+    function sendFeedback() {
+        if (!correctLabel) {
+            alert('실제 정답을 선택해주세요.');
+            return;
+        }
+
+        sendFeedbackData('incorrect', correctLabel);
+    }
+
+    function sendFeedbackData(userFeedback, correctLabel) {
+        const feedbackData = {
+            image_path: currentResult.filename,
+            prediction: currentResult.prediction,
+            confidence: currentResult.confidence,
+            user_feedback: userFeedback,
+            correct_label: correctLabel
+        };
+
+        fetch('/feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(feedbackData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('incorrect-feedback').classList.add('d-none');
+                    document.getElementById('feedback-success').classList.remove('d-none');
+                } else {
+                    alert('피드백 전송 중 오류가 발생했습니다: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('피드백 전송 중 오류가 발생했습니다: ' + error.message);
+            });
+    }
+</script>
+{% endblock %}

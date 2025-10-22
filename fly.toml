@@ -1,0 +1,22 @@
+# Fly.io 배포 설정 파일
+app = "ai-image-detector"
+primary_region = "nrt"  # Tokyo region
+
+[build]
+
+[env]
+  FLASK_ENV = "production"
+  PYTORCH_CUDA_ALLOC_CONF = "max_split_size_mb:128"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

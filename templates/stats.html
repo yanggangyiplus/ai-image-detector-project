@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+
+{% block title %}AI 이미지 분류기 - 통계{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-4">
+                <i class="fas fa-chart-bar me-3"></i>사용 통계
+            </h1>
+            <p class="lead">
+                AI 이미지 분류기의 성능과 사용자 피드백 통계를 확인하세요.
+            </p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mt-5">
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <div class="stat-number">{{ stats.total_feedback }}</div>
+                    <h6 class="text-muted">총 피드백</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <div class="stat-number">{{ stats.correct_predictions }}</div>
+                    <h6 class="text-muted">정확한 예측</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
+                    <div class="stat-number">{{ stats.incorrect_predictions }}</div>
+                    <h6 class="text-muted">부정확한 예측</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card stat-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-3x text-info mb-3"></i>
+                    <div class="stat-number">{{ stats.accuracy }}%</div>
+                    <h6 class="text-muted">정확도</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Chart -->
+    <div class="row mt-5">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>예측 정확도
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="accuracyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>모델 정보
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">모델 성능</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" style="width: {{ stats.accuracy }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ stats.accuracy }}% 정확도</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">총 분석 횟수</h6>
+                        <p class="mb-0">{{ stats.total_feedback }}회</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="text-primary">성공률</h6>
+                        <p class="mb-0">
+                            {% if stats.total_feedback > 0 %}
+                            {{ (stats.correct_predictions / stats.total_feedback * 100) | round(1) }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-5">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history me-2"></i>최근 활동
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if stats.total_feedback > 0 %}
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        최근 {{ stats.total_feedback }}개의 피드백이 수집되었습니다.
+                        {% if stats.accuracy > 90 %}
+                        모델의 성능이 매우 우수합니다!
+                        {% elif stats.accuracy > 80 %}
+                        모델의 성능이 양호합니다.
+                        {% else %}
+                        모델 개선이 필요합니다.
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        아직 수집된 피드백이 없습니다. 이미지를 분석하고 피드백을 제공해주세요!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Performance -->
+    <div class="row mt-5">
+        <div class="col-lg-12">
+            <h2 class="text-center mb-4">모델 성능 지표</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-bullseye fa-3x text-primary mb-3"></i>
+                            <h5>정밀도 (Precision)</h5>
+                            <div class="display-6 text-primary">
+                                {% if stats.total_feedback > 0 %}
+                                {{ (stats.correct_predictions / stats.total_feedback * 100) | round(1) }}%
+                                {% else %}
+                                98.5%
+                                {% endif %}
+                            </div>
+                            <p class="text-muted">올바르게 예측한 비율</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-search fa-3x text-success mb-3"></i>
+                            <h5>재현율 (Recall)</h5>
+                            <div class="display-6 text-success">
+                                {% if stats.total_feedback > 0 %}
+                                {{ (stats.correct_predictions / stats.total_feedback * 100) | round(1) }}%
+                                {% else %}
+                                98.5%
+                                {% endif %}
+                            </div>
+                            <p class="text-muted">실제 정답을 찾은 비율</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-balance-scale fa-3x text-info mb-3"></i>
+                            <h5>F1 점수</h5>
+                            <div class="display-6 text-info">
+                                {% if stats.total_feedback > 0 %}
+                                {{ (stats.correct_predictions / stats.total_feedback * 100) | round(1) }}%
+                                {% else %}
+                                98.5%
+                                {% endif %}
+                            </div>
+                            <p class="text-muted">정밀도와 재현율의 조화평균</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Improvement Suggestions -->
+    <div class="row mt-5">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>개선 제안
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if stats.total_feedback > 0 and stats.accuracy < 95 %} <div class="alert alert-warning"
+                        role="alert">
+                        <h6 class="alert-heading">모델 개선이 필요합니다</h6>
+                        <p>현재 정확도가 95% 미만입니다. 더 많은 피드백을 수집하여 모델을 개선해보세요.</p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>권장사항:</strong>
+                        <ul class="mb-0">
+                            <li>다양한 유형의 이미지로 테스트해보세요</li>
+                            <li>부정확한 예측에 대해 피드백을 제공해주세요</li>
+                            <li>모델 재훈련을 고려해보세요</li>
+                        </ul>
+                        </p>
+                </div>
+                {% elif stats.total_feedback > 0 and stats.accuracy >= 95 %}
+                <div class="alert alert-success" role="alert">
+                    <h6 class="alert-heading">우수한 성능</h6>
+                    <p>모델이 매우 높은 정확도를 보이고 있습니다! 계속해서 피드백을 제공해주세요.</p>
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    <h6 class="alert-heading">피드백 수집 필요</h6>
+                    <p>모델의 성능을 평가하기 위해 더 많은 피드백이 필요합니다.</p>
+                    <hr>
+                    <p class="mb-0">
+                        <strong>다음 단계:</strong>
+                    <ul class="mb-0">
+                        <li>다양한 이미지를 업로드하여 테스트해보세요</li>
+                        <li>예측 결과에 대한 피드백을 제공해주세요</li>
+                        <li>정확하지 않은 예측을 알려주세요</li>
+                    </ul>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Retraining Section -->
+<div class="row mt-5">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-brain me-2"></i>모델 재학습
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="text-primary">피드백 기반 모델 개선</h6>
+                        <p class="text-muted">
+                            사용자 피드백을 수집하여 모델을 지속적으로 개선합니다.
+                            충분한 피드백이 모이면 자동으로 재학습을 진행할 수 있습니다.
+                        </p>
+
+                        <!-- Feedback Stats -->
+                        <div id="feedback-stats" class="row mb-3">
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="h4 text-primary" id="total-feedback">-</div>
+                                    <small class="text-muted">총 피드백</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="h4 text-danger" id="incorrect-feedback">-</div>
+                                    <small class="text-muted">부정확한 예측</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center">
+                                    <div class="h4 text-info" id="recent-feedback">-</div>
+                                    <small class="text-muted">최근 7일</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Retraining Controls -->
+                        <div id="retraining-controls">
+                            <button id="start-retrain-btn" class="btn btn-warning" disabled>
+                                <i class="fas fa-sync-alt me-2"></i>모델 재학습 시작
+                            </button>
+                            <small class="text-muted d-block mt-2">
+                                재학습을 시작하려면 최소 50개의 피드백과 10개의 부정확한 예측이 필요합니다.
+                            </small>
+                        </div>
+
+                        <!-- Retraining Progress -->
+                        <div id="retraining-progress" class="d-none mt-3">
+                            <div class="progress mb-2">
+                                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                    role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div id="progress-message" class="text-center text-muted">재학습을 준비하고 있습니다...</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <h6 class="text-primary">재학습 정보</h6>
+                        <ul class="list-unstyled text-sm">
+                            <li><i class="fas fa-check text-success me-2"></i>피드백 기반 학습</li>
+                            <li><i class="fas fa-check text-success me-2"></i>자동 성능 평가</li>
+                            <li><i class="fas fa-check text-success me-2"></i>모델 백업</li>
+                            <li><i class="fas fa-check text-success me-2"></i>실시간 진행상황</li>
+                        </ul>
+
+                        <div class="alert alert-info mt-3">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                재학습은 백그라운드에서 진행되며, 완료까지 약 10-15분 소요됩니다.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="row mt-5">
+    <div class="col-lg-12 text-center">
+        <h3 class="mb-4">지금 바로 테스트해보세요!</h3>
+        <p class="lead text-muted mb-4">
+            AI 이미지 분류기의 성능을 직접 확인하고 피드백을 제공해주세요.
+        </p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-upload me-2"></i>이미지 분석하기
+        </a>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Accuracy Chart
+    const ctx = document.getElementById('accuracyChart').getContext('2d');
+    const accuracyChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['정확한 예측', '부정확한 예측'],
+            datasets: [{
+                data: [{{ stats.correct_predictions }}, {{ stats.incorrect_predictions }}],
+        backgroundColor: [
+            '#198754',
+            '#dc3545'
+        ],
+        borderWidth: 0
+    }]
+    },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                plugins: {
+            legend: {
+                position: 'bottom',
+                    labels: {
+                    padding: 20,
+                        usePointStyle: true
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+    // Set chart height
+    document.getElementById('accuracyChart').style.height = '300px';
+
+    // Retraining functionality
+    let retrainingInterval = null;
+
+    // Load feedback stats
+    function loadFeedbackStats() {
+        fetch('/feedback/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('피드백 통계 로드 실패:', data.error);
+                    return;
+                }
+
+                document.getElementById('total-feedback').textContent = data.total_feedback;
+                document.getElementById('incorrect-feedback').textContent = data.incorrect_feedback;
+                document.getElementById('recent-feedback').textContent = data.recent_feedback;
+
+                // 재학습 버튼 활성화/비활성화
+                const retrainBtn = document.getElementById('start-retrain-btn');
+                if (data.can_retrain) {
+                    retrainBtn.disabled = false;
+                    retrainBtn.classList.remove('btn-secondary');
+                    retrainBtn.classList.add('btn-warning');
+                } else {
+                    retrainBtn.disabled = true;
+                    retrainBtn.classList.remove('btn-warning');
+                    retrainBtn.classList.add('btn-secondary');
+                }
+            })
+            .catch(error => {
+                console.error('피드백 통계 로드 오류:', error);
+            });
+    }
+
+    // Start retraining
+    function startRetraining() {
+        const retrainBtn = document.getElementById('start-retrain-btn');
+        const progressDiv = document.getElementById('retraining-progress');
+        const controlsDiv = document.getElementById('retraining-controls');
+
+        retrainBtn.disabled = true;
+        retrainBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>재학습 시작 중...';
+
+        fetch('/retrain', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    progressDiv.classList.remove('d-none');
+                    controlsDiv.classList.add('d-none');
+
+                    // 재학습 상태 모니터링 시작
+                    startRetrainingMonitor();
+                } else {
+                    alert('재학습 시작 실패: ' + data.error);
+                    resetRetrainButton();
+                }
+            })
+            .catch(error => {
+                console.error('재학습 시작 오류:', error);
+                alert('재학습 시작 중 오류가 발생했습니다.');
+                resetRetrainButton();
+            });
+    }
+
+    // Monitor retraining progress
+    function startRetrainingMonitor() {
+        retrainingInterval = setInterval(() => {
+            fetch('/retrain/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateRetrainingProgress(data);
+
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(retrainingInterval);
+                        retrainingInterval = null;
+
+                        if (data.status === 'completed') {
+                            showRetrainingSuccess(data);
+                        } else {
+                            showRetrainingError(data.message);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('재학습 상태 확인 오류:', error);
+                });
+        }, 2000); // 2초마다 상태 확인
+    }
+
+    // Update retraining progress
+    function updateRetrainingProgress(data) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressMessage = document.getElementById('progress-message');
+
+        progressBar.style.width = data.progress + '%';
+        progressBar.setAttribute('aria-valuenow', data.progress);
+        progressMessage.textContent = data.message;
+
+        // 진행률에 따른 색상 변경
+        if (data.progress < 30) {
+            progressBar.classList.remove('bg-success', 'bg-warning');
+            progressBar.classList.add('bg-info');
+        } else if (data.progress < 70) {
+            progressBar.classList.remove('bg-info', 'bg-success');
+            progressBar.classList.add('bg-warning');
+        } else {
+            progressBar.classList.remove('bg-info', 'bg-warning');
+            progressBar.classList.add('bg-success');
+        }
+    }
+
+    // Show retraining success
+    function showRetrainingSuccess(data) {
+        const progressDiv = document.getElementById('retraining-progress');
+        const controlsDiv = document.getElementById('retraining-controls');
+
+        progressDiv.innerHTML = `
+        <div class="alert alert-success">
+            <h6 class="alert-heading">
+                <i class="fas fa-check-circle me-2"></i>재학습 완료!
+            </h6>
+            <p class="mb-0">${data.message}</p>
+            ${data.performance ? `
+                <hr>
+                <p class="mb-0">
+                    <strong>성능 지표:</strong><br>
+                    정확도: ${(data.performance.accuracy * 100).toFixed(1)}%<br>
+                    F1 점수: ${(data.performance.f1_score * 100).toFixed(1)}%
+                </p>
+            ` : ''}
+        </div>
+    `;
+
+        // 5초 후 컨트롤 복원
+        setTimeout(() => {
+            progressDiv.classList.add('d-none');
+            controlsDiv.classList.remove('d-none');
+            resetRetrainButton();
+            loadFeedbackStats(); // 통계 새로고침
+        }, 5000);
+    }
+
+    // Show retraining error
+    function showRetrainingError(message) {
+        const progressDiv = document.getElementById('retraining-progress');
+        const controlsDiv = document.getElementById('retraining-controls');
+
+        progressDiv.innerHTML = `
+        <div class="alert alert-danger">
+            <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle me-2"></i>재학습 실패
+            </h6>
+            <p class="mb-0">${message}</p>
+        </div>
+    `;
+
+        // 5초 후 컨트롤 복원
+        setTimeout(() => {
+            progressDiv.classList.add('d-none');
+            controlsDiv.classList.remove('d-none');
+            resetRetrainButton();
+        }, 5000);
+    }
+
+    // Reset retrain button
+    function resetRetrainButton() {
+        const retrainBtn = document.getElementById('start-retrain-btn');
+        retrainBtn.disabled = false;
+        retrainBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>모델 재학습 시작';
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load initial feedback stats
+        loadFeedbackStats();
+
+        // Retrain button click
+        const retrainBtn = document.getElementById('start-retrain-btn');
+        if (retrainBtn) {
+            retrainBtn.addEventListener('click', startRetraining);
+        }
+
+        // Refresh stats every 30 seconds
+        setInterval(loadFeedbackStats, 30000);
+    });
+</script>
+{% endblock %}

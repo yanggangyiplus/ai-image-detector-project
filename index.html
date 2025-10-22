@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 이미지 분류기 - GitHub Pages</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .upload-zone {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #dee2e6 !important;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-color) !important;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-zone.drag-over {
+            border-color: var(--success-color) !important;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            transform: scale(1.02);
+        }
+
+        .card {
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #198754 0%, #157347 100%);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .demo-notice {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-notice h4 {
+            color: #856404;
+            margin-bottom: 1rem;
+        }
+
+        .demo-notice p {
+            color: #856404;
+            margin-bottom: 0;
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+            border: none;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card i {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover i {
+            transform: scale(1.1);
+        }
+
+        #preview-image,
+        #result-image {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #preview-image:hover,
+        #result-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-robot me-2"></i>AI 이미지 분류기
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">
+                            <i class="fas fa-home me-1"></i>홈
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">
+                            <i class="fas fa-info-circle me-1"></i>소개
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#demo">
+                            <i class="fas fa-play me-1"></i>데모
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid">
+        <!-- Hero Section -->
+        <div id="home" class="container my-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="display-4 fw-bold text-primary mb-4">
+                        <i class="fas fa-robot me-3"></i>AI 이미지 분류기
+                    </h1>
+                    <p class="lead mb-4">
+                        업로드한 이미지가 실제 사진인지 AI가 생성한 이미지인지 정확하게 판별해드립니다.
+                        <br>고급 Vision Transformer 모델을 사용하여 높은 정확도로 분석합니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Demo Notice -->
+            <div class="demo-notice">
+                <h4><i class="fas fa-info-circle me-2"></i>GitHub Pages 데모 버전</h4>
+                <p>
+                    이 버전은 GitHub Pages용 데모 버전입니다. 실제 AI 분석을 위해서는
+                    <a href="https://github.com/your-username/ai-image-detector"
+                        class="text-decoration-none fw-bold">GitHub 저장소</a>에서
+                    로컬 실행 또는 Heroku 배포 버전을 사용하세요.
+                </p>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-body p-5">
+                            <!-- Upload Area -->
+                            <div id="upload-area"
+                                class="upload-zone text-center p-5 border-2 border-dashed rounded-3 mb-4">
+                                <div id="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h4 class="text-muted">이미지를 드래그하거나 클릭하여 업로드하세요</h4>
+                                    <p class="text-muted mb-3">
+                                        PNG, JPG, JPEG, GIF, BMP, TIFF 파일 지원 (최대 16MB)
+                                    </p>
+                                    <button type="button" class="btn btn-primary btn-lg" id="file-select-btn">
+                                        <i class="fas fa-folder-open me-2"></i>파일 선택
+                                    </button>
+                                </div>
+
+                                <!-- File Preview -->
+                                <div id="file-preview" class="d-none">
+                                    <img id="preview-image" class="img-fluid rounded mb-3" style="max-height: 300px;">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button id="demo-analyze-btn" class="btn btn-success btn-lg">
+                                            <i class="fas fa-play me-2"></i>데모 분석
+                                        </button>
+                                        <button id="cancel-btn" class="btn btn-secondary">
+                                            <i class="fas fa-times me-2"></i>취소
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden File Input -->
+                            <input type="file" id="file-input" class="d-none" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="row justify-content-center mt-5 d-none">
+                <div class="col-lg-10">
+                    <div class="card shadow-lg border-0">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>데모 분석 결과
+                            </h4>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <!-- Image Display -->
+                                <div class="col-md-4">
+                                    <img id="result-image" class="img-fluid rounded shadow" alt="분석된 이미지">
+                                </div>
+
+                                <!-- Results -->
+                                <div class="col-md-8">
+                                    <div class="mb-4">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-brain me-2"></i>AI 분석 결과 (데모)
+                                        </h5>
+
+                                        <!-- Prediction -->
+                                        <div class="alert alert-info" role="alert">
+                                            <h6 class="alert-heading">
+                                                <i class="fas fa-check-circle me-2"></i>판정 결과
+                                            </h6>
+                                            <p class="mb-0">
+                                                <strong id="prediction-text">실제 사진</strong>
+                                                <span class="badge bg-primary ms-2" id="confidence-badge">85.3%</span>
+                                            </p>
+                                        </div>
+
+                                        <!-- Explanation -->
+                                        <div class="mb-4">
+                                            <h6 class="text-secondary">
+                                                <i class="fas fa-lightbulb me-2"></i>분석 설명
+                                            </h6>
+                                            <p id="explanation-text" class="text-muted">
+                                                이 이미지는 실제 사진으로 판단됩니다 (신뢰도: 85.3%).
+                                                높은 대비와 자연스러운 색상 분포가 실제 사진의 특징을 보여줍니다.
+                                                적절한 밝기와 자연스러운 조명이 실제 환경에서 촬영된 것으로 보입니다.
+                                            </p>
+                                        </div>
+
+                                        <!-- Features -->
+                                        <div class="mb-4">
+                                            <h6 class="text-secondary">
+                                                <i class="fas fa-cogs me-2"></i>이미지 특징
+                                            </h6>
+                                            <div id="features-list" class="row text-sm">
+                                                <div class="col-6">
+                                                    <small class="text-muted">크기: 1920x1080</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted">종횡비: 1.78</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted">밝기: 125.3</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted">대비: 45.2</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Demo Notice -->
+                                    <div class="alert alert-warning" role="alert">
+                                        <h6 class="alert-heading">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>데모 버전 안내
+                                        </h6>
+                                        <p class="mb-0">
+                                            이 결과는 데모용 샘플 결과입니다. 실제 AI 분석을 위해서는
+                                            <a href="https://github.com/your-username/ai-image-detector"
+                                                class="text-decoration-none fw-bold">GitHub 저장소</a>에서
+                                            로컬 실행하거나 Heroku에 배포하세요.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row mt-5">
+                <div class="col-lg-12">
+                    <h3 class="text-center mb-4">주요 기능</h3>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">고급 AI 분석</h5>
+                                    <p class="card-text text-muted">
+                                        Vision Transformer 모델을 사용하여 높은 정확도로 이미지를 분석합니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-pie fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">상세한 분석</h5>
+                                    <p class="card-text text-muted">
+                                        신뢰도 퍼센트와 함께 왜 그런 판정이 나왔는지 설명해드립니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">지속적 학습</h5>
+                                    <p class="card-text text-muted">
+                                        사용자 피드백을 통해 모델이 지속적으로 개선됩니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="about" class="container my-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h2 class="display-5 fw-bold text-primary mb-4">
+                        <i class="fas fa-info-circle me-3"></i>AI 이미지 분류기 소개
+                    </h2>
+                    <p class="lead">
+                        고급 AI 기술을 사용하여 실제 사진과 AI가 생성한 이미지를 정확하게 구분하는 웹 애플리케이션입니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Technology Section -->
+            <div class="row mt-5">
+                <div class="col-lg-12">
+                    <h3 class="text-center mb-5">사용된 기술</h3>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Vision Transformer (ViT)</h5>
+                                    <p class="card-text text-muted">
+                                        Google에서 개발한 최신 이미지 분석 모델로,
+                                        어텐션 메커니즘을 사용하여 이미지의 세밀한 특징을 분석합니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-layer-group fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">딥러닝 모델</h5>
+                                    <p class="card-text text-muted">
+                                        수십만 장의 이미지로 훈련된 딥러닝 모델이
+                                        높은 정확도로 이미지의 진위를 판별합니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 feature-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">지속적 학습</h5>
+                                    <p class="card-text text-muted">
+                                        사용자 피드백을 통해 모델이 지속적으로 개선되어
+                                        더욱 정확한 판별이 가능합니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-brain me-2"></i>
+                AI 이미지 분류기 - 실제 이미지와 AI 생성 이미지를 구분합니다
+            </p>
+            <small class="text-muted">
+                Powered by Vision Transformer (ViT) |
+                <a href="https://github.com/your-username/ai-image-detector" class="text-light" target="_blank">
+                    <i class="fab fa-github me-1"></i>GitHub
+                </a>
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // 전역 변수
+        let currentFile = null;
+
+        // DOM이 로드되면 실행
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            console.log('🚀 AI 이미지 분류기 데모 초기화 중...');
+            setupEventListeners();
+            console.log('✅ 데모 애플리케이션 초기화 완료');
+        }
+
+        function setupEventListeners() {
+            // 파일 입력 이벤트
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.addEventListener('change', handleFileSelect);
+            }
+
+            // 파일 선택 버튼 이벤트
+            const fileSelectBtn = document.getElementById('file-select-btn');
+            if (fileSelectBtn) {
+                fileSelectBtn.addEventListener('click', () => {
+                    if (fileInput) fileInput.click();
+                });
+            }
+
+            // 업로드 영역 이벤트 (드래그앤드롭만)
+            const uploadArea = document.getElementById('upload-area');
+            if (uploadArea) {
+                uploadArea.addEventListener('dragover', handleDragOver);
+                uploadArea.addEventListener('dragleave', handleDragLeave);
+                uploadArea.addEventListener('drop', handleDrop);
+                // 업로드 영역 클릭 이벤트 제거
+            }
+
+            // 데모 분석 버튼 이벤트
+            const demoAnalyzeBtn = document.getElementById('demo-analyze-btn');
+            if (demoAnalyzeBtn) {
+                demoAnalyzeBtn.addEventListener('click', demoAnalyze);
+            }
+
+            // 취소 버튼 이벤트
+            const cancelBtn = document.getElementById('cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', cancelUpload);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            console.log('📁 파일 처리 시작:', file.name);
+
+            if (!validateFile(file)) {
+                return;
+            }
+
+            currentFile = file;
+            showFilePreview(file);
+            console.log('✅ 파일 처리 완료');
+        }
+
+        function validateFile(file) {
+            const allowedTypes = [
+                'image/png',
+                'image/jpeg',
+                'image/jpg',
+                'image/gif',
+                'image/bmp',
+                'image/tiff'
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                alert('지원되지 않는 파일 형식입니다. PNG, JPG, JPEG, GIF, BMP, TIFF 파일만 업로드 가능합니다.');
+                return false;
+            }
+
+            const maxSize = 16 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('파일 크기가 너무 큽니다. 16MB 이하의 파일만 업로드 가능합니다.');
+                return false;
+            }
+
+            return true;
+        }
+
+        function showFilePreview(file) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const previewImage = document.getElementById('preview-image');
+                const uploadContent = document.getElementById('upload-content');
+                const filePreview = document.getElementById('file-preview');
+
+                if (previewImage) {
+                    previewImage.src = e.target.result;
+                }
+
+                if (uploadContent) {
+                    uploadContent.classList.add('d-none');
+                }
+
+                if (filePreview) {
+                    filePreview.classList.remove('d-none');
+                    filePreview.classList.add('fade-in');
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function cancelUpload() {
+            console.log('❌ 업로드 취소');
+
+            currentFile = null;
+
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            const uploadContent = document.getElementById('upload-content');
+            const filePreview = document.getElementById('file-preview');
+            const resultsSection = document.getElementById('results-section');
+
+            if (uploadContent) {
+                uploadContent.classList.remove('d-none');
+            }
+
+            if (filePreview) {
+                filePreview.classList.add('d-none');
+            }
+
+            if (resultsSection) {
+                resultsSection.classList.add('d-none');
+            }
+        }
+
+        function demoAnalyze() {
+            if (!currentFile) {
+                alert('파일을 선택해주세요.');
+                return;
+            }
+
+            console.log('🎭 데모 분석 시작');
+
+            // 결과 표시
+            displayDemoResults();
+        }
+
+        function displayDemoResults() {
+            // 이미지 표시
+            const resultImage = document.getElementById('result-image');
+            if (resultImage && currentFile) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    resultImage.src = e.target.result;
+                };
+                reader.readAsDataURL(currentFile);
+            }
+
+            // 랜덤 데모 결과 생성
+            const isReal = Math.random() > 0.5;
+            const confidence = (Math.random() * 30 + 70).toFixed(1); // 70-100%
+
+            const predictionText = isReal ? '실제 사진' : 'AI 생성 이미지';
+            const explanation = isReal ?
+                `이 이미지는 실제 사진으로 판단됩니다 (신뢰도: ${confidence}%). 높은 대비와 자연스러운 색상 분포가 실제 사진의 특징을 보여줍니다. 적절한 밝기와 자연스러운 조명이 실제 환경에서 촬영된 것으로 보입니다.` :
+                `이 이미지는 AI가 생성한 것으로 판단됩니다 (신뢰도: ${confidence}%). 낮은 대비와 부자연스러운 색상 분포가 AI 생성 이미지의 특징을 보여줍니다. 부자연스러운 밝기나 조명이 AI 생성 이미지의 특징입니다.`;
+
+            // 결과 업데이트
+            const predictionElement = document.getElementById('prediction-text');
+            const confidenceBadge = document.getElementById('confidence-badge');
+            const explanationElement = document.getElementById('explanation-text');
+
+            if (predictionElement) {
+                predictionElement.textContent = predictionText;
+            }
+
+            if (confidenceBadge) {
+                confidenceBadge.textContent = confidence + '%';
+            }
+
+            if (explanationElement) {
+                explanationElement.textContent = explanation;
+            }
+
+            // 결과 섹션 표시
+            const resultsSection = document.getElementById('results-section');
+            if (resultsSection) {
+                resultsSection.classList.remove('d-none');
+                resultsSection.classList.add('fade-in');
+
+                // 스크롤 이동
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // 부드러운 스크롤
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        console.log('📱 AI 이미지 분류기 데모 JavaScript 로드 완료');
+    </script>
+</body>
+
+</html>
