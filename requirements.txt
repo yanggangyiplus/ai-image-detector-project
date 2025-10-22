@@ -5,10 +5,10 @@ Flask==2.3.3
 Werkzeug==2.3.7
 gunicorn==21.2.0
 
-# AI/ML 라이브러리 (안정적인 버전)
-torch==2.1.0
-torchvision==0.16.0
-transformers==4.35.2
+# AI/ML 라이브러리 (Python 3.13 호환)
+torch==2.5.0
+torchvision==0.20.0
+transformers==4.45.0
 datasets==2.14.0
 accelerate==0.24.1
 evaluate==0.4.1
