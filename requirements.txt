@@ -6,7 +6,7 @@ Werkzeug==2.3.7
 gunicorn==21.2.0
 
 # AI/ML 라이브러리 (Python 3.13 호환)
-torch==2.5.0
+torch==2.6.0
 torchvision==0.21.0
 transformers==4.45.0
 datasets==2.14.0
