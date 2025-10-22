@@ -3,12 +3,14 @@ services:
     name: ai-image-detector
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --max-requests 1000
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
         generateValue: true
       - key: PYTORCH_CUDA_ALLOC_CONF
-        value: max_split_size_mb:128
+        value: max_split_size_mb:64
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"

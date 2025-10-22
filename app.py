@@ -45,19 +45,27 @@ retraining_status = {'status': 'idle', 'progress': 0, 'message': ''}
 # AI 모델 로드
 print("🤖 AI 모델 로딩 중...")
 try:
+    # 메모리 최적화 설정
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:64'
+    os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+    
     # 훈련된 모델 로드
     model_path = './ai_vs_real_image_detection'
     device = 0 if torch.cuda.is_available() else -1
     
-    # 파이프라인 생성
+    # 파이프라인 생성 (메모리 최적화)
     classifier = pipeline(
         'image-classification',
         model=model_path,
-        device=device
+        device=device,
+        torch_dtype=torch.float16 if device == 0 else torch.float32
     )
     
     # 개별 모델과 프로세서도 로드 (상세 분석용)
-    model = ViTForImageClassification.from_pretrained(model_path)
+    model = ViTForImageClassification.from_pretrained(
+        model_path,
+        torch_dtype=torch.float16 if device == 0 else torch.float32
+    )
     processor = ViTImageProcessor.from_pretrained(model_path)
     
     print(f"✅ AI 모델 로드 완료! (디바이스: {'GPU' if device == 0 else 'CPU'})")
